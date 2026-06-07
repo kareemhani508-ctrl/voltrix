@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voltrix OMS — Control The Night</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A84C;--gold-light:#E8B84B;--silver:#B0B8C8;
+  --blue:#3B82F6;--success:#10B981;--danger:#EF4444;--warning:#F59E0B;
+  --bg:#0a0a0a;--bg-card:#111;--bg-panel:#141414;
+  --border:#1e1e1e;--text:#E8ECF0;--muted:#6B7280;
+}
+body{background:var(--bg);color:var(--text);font-family:'Cairo','Segoe UI',sans-serif;direction:rtl;min-height:100vh;font-size:14px}
+.header{background:var(--bg-panel);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:200}
+.header-inner{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:52px;gap:8px}
+.logo{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#C9A84C,#3B82F6);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#000}
+.logo-text{font-size:13px;font-weight:800;letter-spacing:.15em;color:var(--gold-light)}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:.2em}
+.nav{display:flex;gap:3px;flex-wrap:wrap}
+.nav-btn{background:none;border:1px solid transparent;border-radius:7px;padding:5px 11px;cursor:pointer;font-size:11px;font-weight:600;color:var(--muted);font-family:inherit;transition:all .2s;white-space:nowrap}
+.nav-btn.active{background:rgba(201,168,76,.1);color:var(--gold-light);border-color:rgba(201,168,76,.3)}
+.nav-btn:hover:not(.active){background:rgba(255,255,255,.04);color:var(--text)}
+.add-btn{background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:7px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;flex-shrink:0;white-space:nowrap}
+.alert-bar{background:rgba(245,158,11,.08);border-bottom:1px solid rgba(245,158,11,.25);padding:6px 20px;text-align:center;font-size:11px;color:var(--warning);display:none}
+.main{max-width:1000px;margin:0 auto;padding:20px 16px}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:18px;font-weight:800;color:var(--gold-light);margin-bottom:4px}
+.page-sub{font-size:11px;color:var(--muted);margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid var(--c)}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:800;color:var(--c);font-family:monospace}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:14px;letter-spacing:.05em}
+.order-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.order-row:last-child{border-bottom:none}
+.order-name{font-size:13px;font-weight:700;color:var(--text)}
+.order-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.order-price{font-size:13px;font-weight:700;color:var(--gold)}
+.order-product{font-size:11px;color:var(--silver);margin-top:2px}
+.badge{border-radius:5px;padding:3px 9px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.row-actions{display:flex;gap:5px;flex-wrap:wrap;margin-right:auto}
+.action-btn{border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .2s;border:1px solid transparent}
+.empty{text-align:center;color:var(--muted);padding:36px 0;font-size:13px}
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-btn{background:none;border:1px solid #222;border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--muted);transition:all .2s}
+.filter-btn.active{background:rgba(201,168,76,.1);color:var(--gold-light);border-color:rgba(201,168,76,.3)}
+.search-input{background:#0d0d0d;border:1px solid #222;border-radius:7px;color:var(--text);padding:7px 12px;font-size:12px;font-family:inherit;outline:none;width:200px}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.top-actions{display:flex;gap:8px}
+.sec-btn{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:7px;padding:6px 13px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--blue);transition:all .2s}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--bg-card);border:1px solid rgba(201,168,76,.25);border-radius:12px;width:100%;max-width:520px;padding:22px;margin:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-title{font-size:14px;font-weight:700;color:var(--gold)}
+.close-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.field input,.field select,.field textarea{background:#0d0d0d;border:1px solid #222;border-radius:7px;color:var(--text);padding:9px 12px;font-size:13px;font-family:inherit;outline:none;width:100%;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(201,168,76,.4)}
+.field select option{background:#111;color:var(--text)}
+.total-box{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.total-label{font-size:12px;color:var(--muted)}
+.total-val{font-size:20px;font-weight:800;color:var(--gold-light)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.cancel-btn{background:rgba(255,255,255,.04);border:1px solid #222;border-radius:7px;padding:8px 16px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--muted)}
+.save-btn{background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:7px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#000}
+.inv-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.inv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.inv-input{background:#0d0d0d;border:1px solid #222;border-radius:6px;color:var(--text);padding:7px 10px;font-size:12px;font-family:inherit;outline:none;width:100%;text-align:center}
+.template-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px}
+.template-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.template-title{font-size:13px;font-weight:700}
+.template-body{background:#0a0a0a;border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-size:12px;color:#B0B8C8;white-space:pre-wrap;line-height:1.8;font-family:inherit}
+.copy-btn{border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid;transition:all .2s}
+.parse-area{background:#0d0d0d;border:1px solid #222;border-radius:7px;color:var(--text);padding:10px 12px;font-size:12px;font-family:inherit;outline:none;width:100%;min-height:130px;resize:vertical;margin-bottom:10px;line-height:1.8}
+.parse-result-box{background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px}
+.parse-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.parse-row:last-child{border-bottom:none}
+.hist-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0}
+.hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sync-bar{background:rgba(201,168,76,.06);border-bottom:1px solid rgba(201,168,76,.15);padding:5px 20px;text-align:center;font-size:10px;color:var(--gold);display:none}
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr}
+  .inv-grid{grid-template-columns:1fr 1fr}
+  .nav-btn span.label{display:none}
+  .search-input{width:140px}
+}
+</style>
+</head>
+<body>
+
+<div class="sync-bar" id="syncBar">⟳ جاري المزامنة مع Google Sheets...</div>
+<div class="alert-bar" id="alertBar"></div>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">VOLTRIX</div>
+        <div class="logo-sub">ORDER SYSTEM</div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="nav-btn active" onclick="showPage('dashboard',this)">Dashboard</button>
+      <button class="nav-btn" onclick="showPage('orders',this)">الأوردرات</button>
+      <button class="nav-btn" onclick="showPage('inventory',this)">المخزون</button>
+      <button class="nav-btn" onclick="showPage('templates',this)">الرسائل</button>
+    </div>
+    <button class="add-btn" onclick="openNewOrder()">+ أوردر</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="page-title">لوحة التحكم</div>
+  <div class="page-sub" id="dashDate"></div>
+  <div class="stats" id="statsGrid"></div>
+  <div class="card">
+    <div class="card-title">◈ آخر الأوردرات</div>
+    <div id="recentOrders"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⬡ المخزون السريع</div>
+    <div id="invSummary"></div>
+  </div>
+</div>
+
+<!-- ORDERS -->
+<div class="page" id="page-orders">
+  <div class="top-bar">
+    <div><div class="page-title">الأوردرات</div></div>
+    <div class="top-actions">
+      <button class="sec-btn" onclick="openParse()">⬇ استيراد رسالة</button>
+      <button class="add-btn" onclick="openNewOrder()">+ أوردر جديد</button>
+    </div>
+  </div>
+  <div class="filters">
+    <input class="search-input" placeholder="🔍 بحث..." id="searchInput" oninput="renderOrders()">
+    <button class="filter-btn active" onclick="setFilter('الكل',this)">الكل</button>
+    <button class="filter-btn" onclick="setFilter('جديد',this)">جديد</button>
+    <button class="filter-btn" onclick="setFilter('تم التأكيد',this)">تم التأكيد</button>
+    <button class="filter-btn" onclick="setFilter('جاري التجهيز',this)">جاري التجهيز</button>
+    <button class="filter-btn" onclick="setFilter('شُحن',this)">شُحن</button>
+    <button class="filter-btn" onclick="setFilter('استُلم',this)">استُلم</button>
+    <button class="filter-btn" onclick="setFilter('ملغي',this)">ملغي</button>
+  </div>
+  <div class="card" style="padding:10px 16px">
+    <div id="ordersList"></div>
+  </div>
+</div>
+
+<!-- INVENTORY -->
+<div class="page" id="page-inventory">
+  <div class="page-title">المخزون</div>
+  <div class="page-sub">تحديث الكميات والأسعار — بيتزامن مع الشيت أتوماتيك</div>
+  <div id="invCards"></div>
+</div>
+
+<!-- TEMPLATES -->
+<div class="page" id="page-templates">
+  <div class="page-title">رسائل جاهزة</div>
+  <div class="page-sub">كوبي وابعت للعميل على طول</div>
+  <div id="templatesList"></div>
+</div>
+
+</div>
+
+<!-- NEW ORDER MODAL -->
+<div class="overlay" id="newOrderModal">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">+ أوردر جديد</div>
+    <button class="close-btn" onclick="closeModal('newOrderModal')">✕</button>
+  </div>
+  <div class="form-row">
+    <div class="field"><label>اسم العميل *</label><input id="f_name" placeholder="محمد أحمد"></div>
+    <div class="field"><label>رقم الموبايل *</label><input id="f_phone" placeholder="010xxxxxxxx"></div>
+  </div>
+  <div class="form-row">
+    <div class="field"><label>المحافظة</label><select id="f_gov"><option value="">اختر...</option></select></div>
+    <div class="field"><label>مصدر الأوردر</label>
+      <select id="f_source"><option value="">اختر...</option><option>Facebook</option><option>Instagram</option><option>WhatsApp</option><option>TikTok</option></select>
+    </div>
+  </div>
+  <div class="field"><label>العنوان التفصيلي</label><input id="f_addr" placeholder="الشارع، المنطقة..."></div>
+  <div class="form-row">
+    <div class="field"><label>المنتج *</label><select id="f_prod" onchange="calcTotal()"><option value="">اختر...</option></select></div>
+    <div class="field"><label>الكمية</label><input id="f_qty" type="number" value="1" min="1" oninput="calcTotal()"></div>
+  </div>
+  <div class="field"><label>طريقة الدفع</label>
+    <select id="f_pay"><option value="">اختر...</option><option>كاش عند الاستلام</option><option>تحويل بنكي</option><option>Vodafone Cash</option><option>InstaPay</option></select>
+  </div>
+  <div class="field"><label>ملاحظات</label><textarea id="f_notes" rows="2" placeholder="أي ملاحظات..."></textarea></div>
+  <div class="total-box" id="totalBox" style="display:none">
+    <span class="total-label">الإجمالي</span>
+    <span class="total-val" id="totalVal">0 ج</span>
+  </div>
+  <div class="modal-actions">
+    <button class="cancel-btn" onclick="closeModal('newOrderModal')">إلغاء</button>
+    <button class="save-btn" onclick="submitOrder()">💾 حفظ الأوردر</button>
+  </div>
+</div>
+</div>
+
+<!-- PARSE MODAL -->
+<div class="overlay" id="parseModal">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">⬇ استيراد من رسالة العميل</div>
+    <button class="close-btn" onclick="closeModal('parseModal')">✕</button>
+  </div>
+
+  <!-- STEP 1: paste message -->
+  <div id="parseStep1">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px">الصق رد العميل وهنستخرج البيانات أتوماتيك</p>
+    <textarea class="parse-area" id="parseText" placeholder="1. الاسم الكامل: محمد أحمد&#10;2. رقم الموبايل: 01012345678&#10;3. المحافظة والعنوان: القاهرة&#10;4. المنتج المطلوب: V1 Pro&#10;5. الكمية: 1&#10;6. طريقة الدفع: كاش عند الاستلام"></textarea>
+    <button class="save-btn" style="width:100%" onclick="doParse()">⚡ استخراج البيانات</button>
+  </div>
+
+  <!-- STEP 2: confirm + complete missing fields -->
+  <div id="parseStep2" style="display:none">
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px">✓ تم الاستخراج — أكمل الناقص واحفظ</p>
+
+    <!-- extracted readonly fields -->
+    <div class="form-row">
+      <div class="field"><label>اسم العميل</label><input id="p_name" placeholder="—"></div>
+      <div class="field"><label>رقم الموبايل</label><input id="p_phone" placeholder="—"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>المحافظة / العنوان</label><input id="p_gov" placeholder="—"></div>
+      <div class="field"><label>الكمية</label><input id="p_qty" type="number" value="1" min="1" oninput="calcParseTotal()"></div>
+    </div>
+
+    <!-- must-fill fields -->
+    <div class="form-row">
+      <div class="field"><label>المنتج *</label>
+        <select id="p_prod" onchange="calcParseTotal()"><option value="">اختر المنتج...</option></select>
+      </div>
+      <div class="field"><label>طريقة الدفع *</label>
+        <select id="p_pay"><option value="">اختر...</option><option>كاش عند الاستلام</option><option>تحويل بنكي</option><option>Vodafone Cash</option><option>InstaPay</option></select>
+      </div>
+    </div>
+    <div class="field"><label>مصدر الأوردر</label>
+      <select id="p_source"><option value="">اختر...</option><option>Facebook</option><option>Instagram</option><option>WhatsApp</option><option>TikTok</option></select>
+    </div>
+    <div class="field"><label>ملاحظات</label><textarea id="p_notes" rows="2" placeholder="أي ملاحظات..."></textarea></div>
+
+    <div class="total-box" id="parseTotalBox" style="display:none">
+      <span class="total-label">الإجمالي</span>
+      <span class="total-val" id="parseTotalVal">0 ج</span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="resetParse()">← رجوع</button>
+      <button class="save-btn" onclick="saveFromParse()">💾 حفظ الأوردر مباشرة</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="overlay" id="detailModal">
+<div class="modal" id="detailContent"></div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxe4LVRYMYzeRjIsue18yTzjZLAVPx1q_U4J_Sz53vajkUG0-MmEUpgLwlsaWBsOXhu/exec';
+
+const GOVS = ['القاهرة','الجيزة','الإسكندرية','الدقهلية','البحيرة','الفيوم','الغربية','الإسماعيلية','المنوفية','المنيا','القليوبية','السويس','أسوان','أسيوط','بني سويف','بورسعيد','دمياط','الشرقية','كفر الشيخ','الأقصر','قنا','سوهاج','البحر الأحمر'];
+
+const STATUS = {
+  'جديد':         {color:'#3B82F6',bg:'rgba(59,130,246,.1)',icon:'⬡',next:'تم التأكيد'},
+  'تم التأكيد':   {color:'#C9A84C',bg:'rgba(201,168,76,.1)',icon:'◈',next:'جاري التجهيز'},
+  'جاري التجهيز': {color:'#F59E0B',bg:'rgba(245,158,11,.1)',icon:'⟳',next:'شُحن'},
+  'شُحن':         {color:'#60A5FA',bg:'rgba(96,165,250,.1)',icon:'⬆',next:'استُلم'},
+  'استُلم':       {color:'#10B981',bg:'rgba(16,185,129,.1)',icon:'✓',next:null},
+  'ملغي':         {color:'#EF4444',bg:'rgba(239,68,68,.1)',icon:'✕',next:null},
+};
+
+const TEMPLATES = [
+  {id:'t1',title:'رسالة طلب البيانات',sub:'ابعتها لما حد يسأل',color:'#3B82F6',
+   text:'أهلاً وسهلاً! 🙌\nشكراً لاهتمامك بـ Voltrix ⚡\n\nعشان نكمل أوردرك، محتاج منك:\n\n1. الاسم الكامل:\n2. رقم الموبايل:\n3. المحافظة والعنوان:\n4. المنتج المطلوب:\n5. الكمية:\n6. طريقة الدفع (كاش عند الاستلام / تحويل):\n\nوهنرد عليك فوراً ✌️'},
+  {id:'t2',title:'رسالة تأكيد الأوردر',sub:'ابعتها بعد تسجيل الأوردر',color:'#C9A84C',
+   text:'✅ تم استلام أوردرك!\n\n📦 المنتج: [اسم المنتج]\n💰 السعر: [السعر] ج\n📍 العنوان: [العنوان]\n🚚 التوصيل: خلال 3-5 أيام عمل\n\nهنبعتلك رقم الشحن لما يتشحن 📲\nشكراً لثقتك في Voltrix ⚡'},
+  {id:'t3',title:'رسالة الشحن',sub:'ابعتها لما تشحن الأوردر',color:'#10B981',
+   text:'🚚 أوردرك اتشحن!\n\n📦 رقم الشحنة: [رقم الشحنة]\n🏢 شركة الشحن: [اسم الشركة]\n⏱️ متوقع وصوله: خلال 2-3 أيام\n\nأي استفسار إحنا هنا ✌️'},
+];
+
+let orders = [];
+let inventory = [
+  {id:1,name:'Voltrix V1 — Basic',price:350,stock:10,minAlert:3},
+  {id:2,name:'Voltrix V1 — Pro',price:550,stock:10,minAlert:3},
+  {id:3,name:'Voltrix V2 — Premium',price:850,stock:5,minAlert:2},
+];
+let filterStatus = 'الكل';
+let parsedData = {};
+
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const fmt = n => Number(n||0).toLocaleString('ar-EG');
+const now = () => new Date().toLocaleString('ar-EG');
+const todayStr = () => new Date().toLocaleDateString('ar-EG');
+
+// ── Google Sheets ─────────────────────────
+async function sheetGet(action) {
+  try {
+    const r = await fetch(SCRIPT_URL+'?action='+action, {redirect:'follow'});
+    const text = await r.text();
+    return JSON.parse(text);
+  } catch(e) { console.error('sheetGet',e); return {success:false}; }
+}
+async function sheetPost(body) {
+  // convert to GET with params to avoid CORS
+  const {action, ...rest} = body;
+  const params = new URLSearchParams({action});
+  Object.entries(rest).forEach(([k,v]) => params.append(k, typeof v==='object' ? JSON.stringify(v) : v));
+  try {
+    const r = await fetch(SCRIPT_URL+'?'+params.toString(), {redirect:'follow'});
+    const text = await r.text();
+    return JSON.parse(text);
+  } catch(e) { console.error('sheetPost',e); return {success:false}; }
+}
+
+function setSyncing(v) {
+  document.getElementById('syncBar').style.display = v ? 'block' : 'none';
+}
+
+async function loadFromSheet() {
+  setSyncing(true);
+  const [oRes, iRes] = await Promise.all([sheetGet('getOrders'), sheetGet('getInventory')]);
+  if (oRes.success && oRes.data?.length > 1) {
+    orders = oRes.data.slice(1).map(r=>({
+      id:r[0],customerName:r[1],phone:r[2],governorate:r[3],
+      address:r[4],source:r[5],productName:r[6],qty:r[7],
+      total:r[8],payment:r[9],status:r[10],createdAt:r[11],
+      notes:r[12],history:[{status:r[10],at:r[11]}]
+    })).filter(o=>o.id);
+  }
+  if (iRes.success && iRes.data?.length > 1) {
+    const loaded = iRes.data.slice(1).map(r=>({id:+r[0],name:r[1],price:+r[2],stock:+r[3],minAlert:+r[4]})).filter(p=>p.id);
+    if (loaded.length) {
+      inventory = loaded;
+      rebuildProdSelect();
+    }
+  }
+  setSyncing(false);
+  renderAll();
+}
+
+// ── Init ──────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('dashDate').textContent = todayStr();
+  fillGovs();
+  rebuildProdSelect();
+  renderTemplates();
+  loadFromSheet();
+});
+
+function fillGovs() {
+  const sel = document.getElementById('f_gov');
+  GOVS.forEach(g => { const o=document.createElement('option'); o.textContent=g; sel.appendChild(o); });
+}
+
+function rebuildProdSelect() {
+  const sel = document.getElementById('f_prod');
+  sel.innerHTML = '<option value="">اختر...</option>';
+  inventory.forEach(p => {
+    const o=document.createElement('option');
+    o.value=p.id; o.textContent=p.name+' — '+p.price+' ج';
+    sel.appendChild(o);
+  });
+}
+
+// ── Pages ─────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(id==='dashboard') renderDash();
+  if(id==='orders') renderOrders();
+  if(id==='inventory') renderInventory();
+}
+
+function renderAll() {
+  renderDash(); renderOrders(); renderInventory(); checkAlerts();
+}
+
+function checkAlerts() {
+  const low = inventory.filter(p=>p.stock<=p.minAlert);
+  const bar = document.getElementById('alertBar');
+  if(low.length){ bar.style.display='block'; bar.textContent='⚠️ مخزون منخفض: '+low.map(p=>p.name+' ('+p.stock+' قطعة)').join(' · '); }
+  else bar.style.display='none';
+}
+
+// ── Dashboard ─────────────────────────────
+function renderDash() {
+  const todayO = orders.filter(o=>o.createdAt&&o.createdAt.includes(todayStr()));
+  const revenue = orders.filter(o=>o.status==='استُلم').reduce((s,o)=>s+(+o.total||0),0);
+  const pending = orders.filter(o=>!['استُلم','ملغي'].includes(o.status)).length;
+  document.getElementById('statsGrid').innerHTML =
+    statCard('أوردرات النهارده',todayO.length,'#3B82F6','أوردر جديد') +
+    statCard('قيد التنفيذ',pending,'#C9A84C','يحتاج متابعة') +
+    statCard('الإيرادات',fmt(revenue)+' ج','#10B981','من المستلمة') +
+    statCard('إجمالي الأوردرات',orders.length,'#B0B8C8','كل الوقت');
+  document.getElementById('recentOrders').innerHTML = orders.length ? orders.slice(0,5).map(orderRowHTML).join('') : '<div class="empty">لا يوجد أوردرات بعد</div>';
+  document.getElementById('invSummary').innerHTML = inventory.map(p=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:13px">${p.name}</div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <span style="font-size:11px;color:var(--muted)">${p.price} ج</span>
+        <span style="font-size:13px;font-weight:700;color:${p.stock<=p.minAlert?'var(--danger)':'var(--success)'}">${p.stock} قطعة</span>
+      </div>
+    </div>`).join('');
+}
+
+function statCard(label,value,color,sub) {
+  return `<div class="stat-card" style="--c:${color}"><div class="stat-label">${label}</div><div class="stat-value">${value}</div><div class="stat-sub">${sub}</div></div>`;
+}
+
+// ── Orders ────────────────────────────────
+function setFilter(s,btn) {
+  filterStatus=s;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOrders();
+}
+
+function renderOrders() {
+  const q=(document.getElementById('searchInput')||{}).value||'';
+  const filtered=orders.filter(o=>{
+    const ms=filterStatus==='الكل'||o.status===filterStatus;
+    const mq=!q||((o.customerName||'').includes(q))||((o.phone||'').includes(q))||((o.id||'').includes(q));
+    return ms&&mq;
+  });
+  document.getElementById('ordersList').innerHTML=filtered.length?filtered.map(orderRowHTML).join(''):'<div class="empty">لا توجد نتائج</div>';
+}
+
+function orderRowHTML(o) {
+  const cfg=STATUS[o.status]||{color:'#888',bg:'rgba(136,136,136,.1)',icon:'?'};
+  return `<div class="order-row">
+    <div style="flex:1;min-width:130px">
+      <div class="order-name">${o.customerName||'—'}</div>
+      <div class="order-meta">${o.phone||''} · ${o.governorate||''} · ${o.source||''}</div>
+    </div>
+    <div style="min-width:100px">
+      <div class="order-product">${o.productName||''}</div>
+      <div class="order-price">${fmt(o.total)} ج</div>
+    </div>
+    <span class="badge" style="background:${cfg.bg};color:${cfg.color};border:1px solid ${cfg.color}44">${cfg.icon} ${o.status}</span>
+    <div class="row-actions">
+      ${cfg.next?`<button class="action-btn" style="background:${cfg.bg};color:${cfg.color};border-color:${cfg.color}44" onclick="advStatus('${o.id}','${cfg.next}')">→ ${cfg.next}</button>`:''}
+      ${o.status!=='ملغي'&&o.status!=='استُلم'?`<button class="action-btn" style="background:rgba(239,68,68,.08);color:#EF4444;border-color:rgba(239,68,68,.25)" onclick="advStatus('${o.id}','ملغي')">إلغاء</button>`:''}
+      <button class="action-btn" style="background:rgba(255,255,255,.04);color:var(--muted)" onclick="openDetail('${o.id}')">تفاصيل</button>
+    </div>
+  </div>`;
+}
+
+async function advStatus(id,newStatus) {
+  orders=orders.map(o=>o.id===id?{...o,status:newStatus,history:[...(o.history||[]),{status:newStatus,at:now()}]}:o);
+  renderAll();
+  setSyncing(true);
+  await sheetPost({action:'updateOrder',id,status:newStatus});
+  setSyncing(false);
+}
+
+// ── New Order ─────────────────────────────
+function openNewOrder() { document.getElementById('newOrderModal').classList.add('open'); }
+
+function calcTotal() {
+  const pid=+document.getElementById('f_prod').value;
+  const qty=+document.getElementById('f_qty').value||1;
+  const p=inventory.find(x=>x.id===pid);
+  const box=document.getElementById('totalBox');
+  if(p){ box.style.display='flex'; document.getElementById('totalVal').textContent=fmt(p.price*qty)+' ج'; }
+  else box.style.display='none';
+}
+
+async function submitOrder() {
+  const name=document.getElementById('f_name').value.trim();
+  const phone=document.getElementById('f_phone').value.trim();
+  const pid=+document.getElementById('f_prod').value;
+  if(!name||!phone||!pid){ alert('الاسم والموبايل والمنتج مطلوبين'); return; }
+  const prod=inventory.find(p=>p.id===pid);
+  const qty=+document.getElementById('f_qty').value||1;
+  const order={
+    id:uid(),customerName:name,phone:phone,
+    governorate:document.getElementById('f_gov').value,
+    address:document.getElementById('f_addr').value,
+    source:document.getElementById('f_source').value,
+    productId:pid,productName:prod?.name,qty,
+    total:(prod?.price||0)*qty,
+    payment:document.getElementById('f_pay').value,
+    notes:document.getElementById('f_notes').value,
+    status:'جديد',createdAt:now(),
+    history:[{status:'جديد',at:now()}]
+  };
+  orders=[order,...orders];
+  inventory=inventory.map(p=>p.id===pid?{...p,stock:Math.max(0,p.stock-qty)}:p);
+  renderAll();
+  closeModal('newOrderModal');
+  clearForm();
+  setSyncing(true);
+  await Promise.all([
+    sheetPost({action:'addOrder',order}),
+    sheetPost({action:'updateInventory',inventory})
+  ]);
+  setSyncing(false);
+}
+
+function clearForm() {
+  ['f_name','f_phone','f_addr','f_notes'].forEach(id=>document.getElementById(id).value='');
+  ['f_gov','f_source','f_prod','f_pay'].forEach(id=>document.getElementById(id).selectedIndex=0);
+  document.getElementById('f_qty').value=1;
+  document.getElementById('totalBox').style.display='none';
+}
+
+// ── Parse ─────────────────────────────────
+function openParse() { document.getElementById('parseModal').classList.add('open'); }
+
+function doParse() {
+  const text = document.getElementById('parseText').value.trim();
+  if (!text) return;
+  parsedData = {};
+  const patterns = [
+    {key:'customerName', re:/(?:الاسم|اسم).*?[:：]\s*(.+)/i},
+    {key:'phone',        re:/(?:رقم|موبايل|تليفون).*?[:：]\s*(.+)/i},
+    {key:'governorate',  re:/(?:محافظة|عنوان|مدينة).*?[:：]\s*(.+)/i},
+    {key:'productName',  re:/(?:منتج|المنتج).*?[:：]\s*(.+)/i},
+    {key:'qty',          re:/(?:كمية|الكمية|عدد).*?[:：]\s*(.+)/i},
+    {key:'payment',      re:/(?:دفع|طريقة).*?[:：]\s*(.+)/i},
+  ];
+  text.split('\n').forEach(line => patterns.forEach(({key,re}) => {
+    if (!parsedData[key]) { const m=line.trim().match(re); if(m) parsedData[key]=m[1].trim(); }
+  }));
+
+  // fill step 2 fields
+  document.getElementById('p_name').value  = parsedData.customerName || '';
+  document.getElementById('p_phone').value = parsedData.phone || '';
+  document.getElementById('p_gov').value   = parsedData.governorate || '';
+  document.getElementById('p_qty').value   = parseInt(parsedData.qty) || 1;
+  document.getElementById('p_notes').value = '';
+
+  // rebuild product select
+  const ps = document.getElementById('p_prod');
+  ps.innerHTML = '<option value="">اختر المنتج...</option>';
+  inventory.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id; o.textContent = p.name + ' — ' + p.price + ' ج';
+    // try to auto-match product name from message
+    if (parsedData.productName && p.name.toLowerCase().includes(parsedData.productName.toLowerCase().slice(0,4)))
+      o.selected = true;
+    ps.appendChild(o);
+  });
+
+  // try to auto-match payment
+  const pp = document.getElementById('p_pay');
+  if (parsedData.payment) {
+    Array.from(pp.options).forEach(o => {
+      if (o.text.includes('كاش') && parsedData.payment.includes('كاش')) o.selected = true;
+      if (o.text.includes('تحويل') && parsedData.payment.includes('تحويل')) o.selected = true;
+      if (o.text.includes('Vodafone') && parsedData.payment.includes('فودافون')) o.selected = true;
+    });
+  }
+
+  calcParseTotal();
+
+  // switch to step 2
+  document.getElementById('parseStep1').style.display = 'none';
+  document.getElementById('parseStep2').style.display = 'block';
+}
+
+function calcParseTotal() {
+  const pid = +document.getElementById('p_prod').value;
+  const qty = +document.getElementById('p_qty').value || 1;
+  const p = inventory.find(x => x.id === pid);
+  const box = document.getElementById('parseTotalBox');
+  if (p) { box.style.display='flex'; document.getElementById('parseTotalVal').textContent = fmt(p.price*qty)+' ج'; }
+  else box.style.display = 'none';
+}
+
+async function saveFromParse() {
+  const name  = document.getElementById('p_name').value.trim();
+  const phone = document.getElementById('p_phone').value.trim();
+  const pid   = +document.getElementById('p_prod').value;
+  if (!name || !phone || !pid) { alert('الاسم والموبايل والمنتج مطلوبين'); return; }
+  const prod = inventory.find(p => p.id === pid);
+  const qty  = +document.getElementById('p_qty').value || 1;
+  const order = {
+    id: uid(), customerName: name, phone: phone,
+    governorate: document.getElementById('p_gov').value,
+    address: '', source: document.getElementById('p_source').value,
+    productId: pid, productName: prod?.name, qty,
+    total: (prod?.price||0)*qty,
+    payment: document.getElementById('p_pay').value,
+    notes: document.getElementById('p_notes').value,
+    status: 'جديد', createdAt: now(),
+    history: [{status:'جديد', at:now()}]
+  };
+  orders = [order, ...orders];
+  inventory = inventory.map(p => p.id===pid ? {...p, stock:Math.max(0,p.stock-qty)} : p);
+  renderAll();
+  closeModal('parseModal');
+  setSyncing(true);
+  await Promise.all([
+    sheetPost({action:'addOrder', order}),
+    sheetPost({action:'updateInventory', inventory})
+  ]);
+  setSyncing(false);
+}
+
+function resetParse() {
+  document.getElementById('parseStep1').style.display = 'block';
+  document.getElementById('parseStep2').style.display = 'none';
+  document.getElementById('parseText').value = '';
+  document.getElementById('parseTotalBox').style.display = 'none';
+}
+
+// ── Detail Modal ──────────────────────────
+function openDetail(id) {
+  const o=orders.find(x=>x.id===id); if(!o) return;
+  const cfg=STATUS[o.status]||{};
+  const rows=[['رقم الأوردر',o.id],['العميل',o.customerName],['الموبايل',o.phone],
+    ['المحافظة',o.governorate],['العنوان',o.address],['المصدر',o.source],
+    ['المنتج',o.productName],['الكمية',o.qty],['الدفع',o.payment],
+    ['الإجمالي',fmt(o.total)+' ج'],['تاريخ الإنشاء',o.createdAt]]
+    .filter(([,v])=>v).map(([k,v])=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">${k}</span><span style="font-weight:600">${v}</span></div>`).join('');
+  document.getElementById('detailContent').innerHTML=`
+    <div class="modal-header"><div class="modal-title">أوردر — ${o.customerName}</div><button class="close-btn" onclick="closeModal('detailModal')">✕</button></div>
+    ${rows}
+    <div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted)">الحالة</span>
+      <span class="badge" style="background:${cfg.bg};color:${cfg.color};border:1px solid ${cfg.color}44">${cfg.icon||''} ${o.status}</span>
+    </div>
+    ${o.notes?`<div style="background:#0a0a0a;border-radius:7px;padding:10px 12px;font-size:12px;color:var(--muted);margin:10px 0">📝 ${o.notes}</div>`:''}
+    <div style="margin-top:12px">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">سجل الحالات</div>
+      ${(o.history||[]).map(h=>{const c=STATUS[h.status]?.color||'#888';return`<div class="hist-row"><div class="hist-dot" style="background:${c};box-shadow:0 0 5px ${c}40"></div><span>${h.status}</span><span style="color:var(--muted);margin-right:auto;font-size:11px">${h.at}</span></div>`;}).join('')}
+    </div>
+    ${cfg.next?`<button class="save-btn" style="width:100%;margin-top:14px" onclick="advStatus('${o.id}','${cfg.next}');closeModal('detailModal')">→ نقل إلى: ${cfg.next}</button>`:''}
+  `;
+  document.getElementById('detailModal').classList.add('open');
+}
+
+// ── Inventory ─────────────────────────────
+function renderInventory() {
+  document.getElementById('invCards').innerHTML=inventory.map(p=>`
+    <div class="inv-card" style="border-left:3px solid ${p.stock<=p.minAlert?'var(--danger)':'var(--success)'}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-size:14px;font-weight:700">${p.name}</div><div style="font-size:11px;color:var(--muted)">سعر البيع: ${p.price} ج</div></div>
+        <div style="font-size:26px;font-weight:800;color:${p.stock<=p.minAlert?'var(--danger)':'var(--success)'}">${p.stock} <span style="font-size:12px;font-weight:400">قطعة</span></div>
+      </div>
+      <div class="inv-grid">
+        <div>
+          <label style="display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase">إضافة للمخزون</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="add_${p.id}" value="0" min="0" class="inv-input">
+            <button onclick="addStock(${p.id})" style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:6px;padding:7px 12px;color:#10B981;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit">+</button>
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase">حد التنبيه</label>
+          <input type="number" value="${p.minAlert}" onchange="updateInv(${p.id},'minAlert',this.value)" class="inv-input">
+        </div>
+        <div>
+          <label style="display:block;font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase">سعر البيع</label>
+          <input type="number" value="${p.price}" onchange="updateInv(${p.id},'price',this.value)" class="inv-input">
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function addStock(id) {
+  const v=+document.getElementById('add_'+id).value;
+  if(v<=0) return;
+  inventory=inventory.map(p=>p.id===id?{...p,stock:p.stock+v}:p);
+  renderInventory(); checkAlerts(); renderDash();
+  setSyncing(true);
+  await sheetPost({action:'updateInventory',inventory});
+  setSyncing(false);
+}
+
+async function updateInv(id,key,val) {
+  inventory=inventory.map(p=>p.id===id?{...p,[key]:+val}:p);
+  checkAlerts();
+  setSyncing(true);
+  await sheetPost({action:'updateInventory',inventory});
+  setSyncing(false);
+}
+
+// ── Templates ─────────────────────────────
+function renderTemplates() {
+  document.getElementById('templatesList').innerHTML=TEMPLATES.map(t=>`
+    <div class="template-card" style="border-top:2px solid ${t.color}">
+      <div class="template-header">
+        <div><div class="template-title" style="color:${t.color}">${t.title}</div><div style="font-size:11px;color:var(--muted)">${t.sub}</div></div>
+        <button class="copy-btn" id="cb_${t.id}" style="color:${t.color};border-color:${t.color}44;background:${t.color}11" onclick="copyTemplate('${t.id}')">📋 كوبي</button>
+      </div>
+      <div class="template-body">${t.text}</div>
+    </div>`).join('');
+}
+
+function copyTemplate(id) {
+  const t=TEMPLATES.find(x=>x.id===id);
+  navigator.clipboard.writeText(t.text);
+  const btn=document.getElementById('cb_'+id);
+  btn.textContent='✓ تم النسخ'; btn.style.color='#10B981';
+  setTimeout(()=>{btn.textContent='📋 كوبي';btn.style.color=t.color;},2000);
+}
+
+// ── Utils ─────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if(id==='parseModal') resetParse();
+}
+</script>
+</body>
+</html>
